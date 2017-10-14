@@ -62,3 +62,5 @@ pref("extensions.jondoswitcher.direct.socks_version", 5);
 pref("extensions.jondoswitcher.direct.ssl", "");
 pref("extensions.jondoswitcher.direct.ssl_port", 0);
 pref("extensions.jondoswitcher.direct.type", 0);
+// survey info
+pref("extensions.jondoswitcher.show_survey_info", true);

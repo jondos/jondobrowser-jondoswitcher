@@ -2,6 +2,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import("resource://jondoswitcher/content/jondo-singletons.js");
 var windowMediator = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
+let prefsService = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefService);
 
 var checkProxyTimerObj = null;
 
@@ -49,6 +50,8 @@ function checkProxy(){
     if(proxy != "Unknown"){
         clearInterval(checkProxyTimerObj);
         checkProxyTimerObj = null;
+        // show survey info if not done already
+        showSurveyInfo();
     }
 }
 
@@ -62,9 +65,74 @@ var sendSwitchCascadeCommand = () => {
         if(windowMediator.getMostRecentWindow("navigator:browser") == window){
             JonDoCommunicator.sendSwitchCascadeCommand();
         }else{
-            alert("not current window");
+            console.log("not current window");
         }
     }catch(e){
-        alert(e);
+        console.log(e);
+    }
+}
+
+function showSurveyInfo(){
+    var shouldShowSurveyInfo = false;
+
+    // check if survey has not been done
+    try{
+        if(prefsService){
+            let prefsBranch = prefsService.getBranch("extensions.jondoswitcher.");
+            if(prefsBranch){
+                shouldShowSurveyInfo = prefsBranch.getBoolPref("show_survey_info");
+            }
+        }
+    }catch(e){
+        console.log(e);
+    }
+    console.log("jondoswitcher survey : " + shouldShowSurveyInfo);
+
+    if(!shouldShowSurveyInfo){
+        return;
+    }
+
+    try{
+        const kNotificationName = "jondofox-survey-notification";
+        // get the notificationbox that persists all tabs
+        let box = window.top.document.getElementById("high-priority-global-notificationbox");
+        // check if migrate notificationbox is already present
+        if (box.getNotificationWithValue(kNotificationName))
+          return;
+        
+        // get necessary localized strings
+        let message = JonDoSwitcher.stringsBundle.GetStringFromName("survey.message");
+        let button_url = JonDoSwitcher.stringsBundle.GetStringFromName("survey.url");
+        let button_label = JonDoSwitcher.stringsBundle.GetStringFromName("survey.buttonText");
+
+        let buttons = [{
+          label: button_label,
+          accessKey: 'K',
+          popup: null,
+          callback:
+            function() {
+              // open browser download url in a new tab
+              var windowMediator = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
+              var recentWindow = windowMediator.getMostRecentWindow("navigator:browser");
+              recentWindow.delayedOpenTab(button_url, null, null, null, null);
+              // check if survey has not been done
+              try{
+                if(prefsService){
+                    let prefsBranch = prefsService.getBranch("extensions.jondoswitcher.");
+                    if(prefsBranch){
+                        prefsBranch.setBoolPref("show_survey_info", false);
+                    }
+                }
+              }catch(e){
+                console.log(e);
+              }
+            }
+        }];
+
+        var notification = box.appendNotification(message, kNotificationName, null, box.PRIORITY_INFO_HIGH, buttons);
+        notification.style.backgroundColor = "#cfe5f3";
+        notification.style.borderColor = "#a0b9cf";
+    }catch(e){
+        console.log(e);
     }
 }
