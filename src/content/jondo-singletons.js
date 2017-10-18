@@ -675,10 +675,11 @@ var JonDoCommunicator = {
 
   // heartbeat
   sendPing : ()=>{
-    if(JonDoCommunicator.socketConnection && JonDoCommunicator.secureKey){
+    if((JonDoCommunicator.socketConnection && JonDoCommunicator.secureKey) || JonDoCommunicator.lastPongTime != null){
       if(JonDoCommunicator.lastPongTime){
-        var currentTime = new Date().getMilliseconds();
+        var currentTime = Date.now();
         if((currentTime - JonDoCommunicator.lastPongTime) > 3 * 1000){
+          JonDoCommunicator.lastPongTime = null;
           JonDoCommunicator.shutDownSocketConnection();
           return;
         }
@@ -958,7 +959,7 @@ var JonDoCommunicator = {
                   }
               }else{
                 if(result == "pong"){
-                  JonDoCommunicator.lastPongTime = new Date().getMilliseconds();
+                  JonDoCommunicator.lastPongTime = Date.now();
                 }
               }
             }
