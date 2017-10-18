@@ -79,9 +79,7 @@ var JonDoSwitcher = {
                     JonDoSwitcher.validateCurrentNetwork();
                 }
             });
-        }catch(e){
-            //Services.prompt.alert(null, "JonDoBrowser", e);
-        }
+        }catch(e){}
     },
 
     //validate current network preferences with enabled addons
@@ -105,9 +103,7 @@ var JonDoSwitcher = {
                     }
                 }
             }
-        }catch(e){
-            //Services.prompt.alert(null, "JonDoBrowser", e);
-        }
+        }catch(e){}
 
         //create extensionsDir.txt file that contains extensions directory path
         try{
@@ -126,14 +122,12 @@ var JonDoSwitcher = {
             }
             txtFile.appendRelativePath("extensionsDir.txt");
             JonDoSwitcher.writeToExtensionDirFile(txtFile, JonDoSwitcher.xpiDestDir.path);
-        }catch(e){
-            //Services.prompt.alert(null, "JonDoBrowser", e);
-        }   
+        }catch(e){}   
         
         //if both are enabled, disable tor and restart
         if(JonDoSwitcher.jondoEnabled && JonDoSwitcher.torEnabled){
-            Services.prompt.alert(null, "JonDoBrowser", "JonDo launch Error!\nPlease restart JonDoBrowser to fix this error.");
             JonDoSwitcher.switchAddons(true, false);
+            JonDoCommunicator.showConnectionError("jondo.error.launch_error");
             JonDoSwitcher.restart();
             return;
         }
@@ -171,9 +165,7 @@ var JonDoSwitcher = {
                         }
                     }
                 }
-            }catch(e){
-                //Services.prompt.alert(null, "JonDoBrowser", e);
-            }
+            }catch(e){}
         }
     },
 
@@ -381,9 +373,7 @@ var JonDoSwitcher = {
                     prefsBranch.setCharPref("current_network", networkString);
                 }
             }
-        }catch(e){
-            //Services.prompt.alert(null, "JonDoBrowser", e);
-        }
+        }catch(e){}
     },
 
     setUpdateStatus : (updateStatus) => {
@@ -395,9 +385,7 @@ var JonDoSwitcher = {
                     prefsBranch.setIntPref("update_status", updateStatus);
                 }
             }
-        }catch(e){
-            //Services.prompt.alert(null, "JonDoBrowser", e);
-        }
+        }catch(e){}
     },
 
     restart : () => {
@@ -448,9 +436,7 @@ var JonDoSwitcher = {
                 destBranch = prefsService.getBranch(destBranchName + "autoconfig_url.");
                 destBranch.setBoolPref("include_path", srcBranch.getBoolPref("include_path"));
             }
-        } catch(e){
-            //Services.prompt.alert(null, "JonDoBrowser", e);
-        }
+        } catch(e){}
     },
 
     changeHomePage : (homePage) => {
@@ -459,9 +445,7 @@ var JonDoSwitcher = {
                 var branch = prefsService.getBranch("browser.startup.");
                 branch.setCharPref("homepage", homePage);
             }
-        } catch(e){
-            //Services.prompt.alert(null, "JonDoBrowser", e);
-        }
+        } catch(e){}
     },
 
     writeToExtensionDirFile : (file, data) => {
@@ -565,9 +549,7 @@ var JonDoNetworkIntercepter = {
                 try{
                     httpChannel.setRequestHeader("Proxy-Connection", "close", false);
                     httpChannel.setRequestHeader("Connection", "close", false);
-                }catch(e){
-                    //Services.prompt.alert(null, "JonDoBrowser", e);
-                }
+                }catch(e){}
             }
         }
     }},
@@ -594,9 +576,7 @@ var JonDoNetworkIntercepter = {
                     }
                 }
                 return;
-            } catch(e) {
-                Services.prompt.alert(null, "JonDoBrowser", e);
-            }
+            } catch(e) {}
         }
         
         // update response packet filtering in tor mode
@@ -627,9 +607,7 @@ var JonDoNetworkIntercepter = {
                             }
                         }
                     }
-                }catch(e){
-                    //Services.prompt.alert(null, "JonDoBrowser", e);
-                }
+                }catch(e){}
             }
         }
     }}
@@ -710,10 +688,16 @@ var JonDoCommunicator = {
   },
 
   // show jondo connection error alert
-  showConnectionError : ()=>{
-      if(!JonDoCommunicator.socketControl.silentMode)
-          Services.prompt.alert(null, "Connecting to Jondo", 
-              "Cannot establish connection with Jondo.\r\nRestarting the browser might fix this issue.");
+  showConnectionError : (message)=>{
+    if(!JonDoCommunicator.socketControl.silentMode || message == "jondo.error.launch_error"){
+        try{
+            var errorTitle = JonDoSwitcher.stringsBundle.GetStringFromName("jondo.error.title");
+            var errorMessage = JonDoSwitcher.stringsBundle.GetStringFromName(message);
+            Services.prompt.alert(null, errorTitle, errorMessage);
+        } catch(e) {
+            Services.prompt.alert(null, "Unknown Error", e);
+        }
+    }
   },
 
   // create and open socket connection
@@ -769,7 +753,7 @@ var JonDoCommunicator = {
   // shut down connection and show alert
   shutDownSocketConnection : ()=>{
       JonDoCommunicator.shutDownSocketConnectionSilently();
-      JonDoCommunicator.showConnectionError();
+      JonDoCommunicator.showConnectionError("jondo.error.connection_cutoff");
   },
 
   // stop connecting to socket
@@ -792,16 +776,14 @@ var JonDoCommunicator = {
       }
       if (JonDoCommunicator.startConnectionFailedCount >= JonDoCommunicator.startConnectionMaxFailCount){
           JonDoCommunicator.clearConnectionTimer();
-          JonDoCommunicator.showConnectionError();
+          JonDoCommunicator.showConnectionError("jondo.error.connection_timeout");
           return;
       }
 
       var conn = JonDoCommunicator.openConnection();
       if (!conn)
       {
-        if(!JonDoCommunicator.socketControl.silentMode)
-          Services.prompt.alert(null, "Connecting to Jondo",
-            "Could not connect to Jondo control port.");
+        JonDoCommunicator.showConnectionError("jondo.error.connection_openfailed");
         return;
       }
 
@@ -821,7 +803,7 @@ var JonDoCommunicator = {
         JonDoCommunicator.startConnectionFailedCount++;
         if(JonDoCommunicator.startConnectionFailedCount >= JonDoCommunicator.startConnectionMaxFailCount){
           JonDoCommunicator.clearConnectionTimer();
-          JonDoCommunicator.showConnectionError();
+          JonDoCommunicator.showConnectionError("jondo.error.connection_timeout");
         }
         return;
       }
@@ -900,9 +882,7 @@ var JonDoCommunicator = {
         {
           if (!JonDoCommunicator.socketConnection || (JonDoCommunicator.socketConnection.inStream != aInStream))
           {
-            if(!JonDoCommunicator.socketControl.silentMode)
-              Services.prompt.alert(null, "Connecting to Jondo",
-                "Could not read from Jondo control port.");
+            JonDoCommunicator.showConnectionError("jondo.error.connection_cutoff");
             return;
           }
 
