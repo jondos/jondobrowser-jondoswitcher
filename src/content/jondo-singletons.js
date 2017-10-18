@@ -578,11 +578,29 @@ var JonDoNetworkIntercepter = {
         if(httpChannel === null) {
             return;
         }
+
+        // if survey response is 200 OK,
+        // then set the preference in order not to show survey any more
+        var url = httpChannel.URI.spec;
+        let survey_url = JonDoSwitcher.stringsBundle.GetStringFromName("survey.url");
+        if (url == survey_url) {
+            try {
+                if(httpChannel.responseStatusText == "OK"){
+                    if(prefsService){
+                        let prefsBranch = prefsService.getBranch("extensions.jondoswitcher.");
+                        if(prefsBranch){
+                            prefsBranch.setBoolPref("show_survey_info", false);
+                        }
+                    }
+                }
+                return;
+            } catch(e) {
+                Services.prompt.alert(null, "JonDoBrowser", e);
+            }
+        }
         
         // update response packet filtering in tor mode
-        if(JonDoSwitcher.torEnabled){
-            //only for jondo update server
-            var url = httpChannel.URI.spec;
+        if (JonDoSwitcher.torEnabled) {
             if(url.includes("jondobrowser.jondos.de/alpha/") || 
                 url.includes("jondobrowser.jondos.de/beta/") || 
                 url.includes("jondobrowser.jondos.de/product/")){

@@ -98,7 +98,7 @@ function showSurveyInfo(){
         let box = window.top.document.getElementById("high-priority-global-notificationbox");
         // check if migrate notificationbox is already present
         if (box.getNotificationWithValue(kNotificationName))
-          return;
+            return;
         
         // get necessary localized strings
         let message = JonDoSwitcher.stringsBundle.GetStringFromName("survey.message");
@@ -106,27 +106,16 @@ function showSurveyInfo(){
         let button_label = JonDoSwitcher.stringsBundle.GetStringFromName("survey.buttonText");
 
         let buttons = [{
-          label: button_label,
-          accessKey: 'K',
-          popup: null,
-          callback:
-            function() {
-              // open browser download url in a new tab
-              var windowMediator = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
-              var recentWindow = windowMediator.getMostRecentWindow("navigator:browser");
-              recentWindow.delayedOpenTab(button_url, null, null, null, null);
-              // check if survey has not been done
-              try{
-                if(prefsService){
-                    let prefsBranch = prefsService.getBranch("extensions.jondoswitcher.");
-                    if(prefsBranch){
-                        prefsBranch.setBoolPref("show_survey_info", false);
-                    }
+            label: button_label,
+            accessKey: 'K',
+            popup: null,
+            callback:
+                function() {
+                    // open browser download url in a new tab
+                    var windowMediator = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
+                    var recentWindow = windowMediator.getMostRecentWindow("navigator:browser");
+                    recentWindow.delayedOpenTab(button_url, null, null, null, null);
                 }
-              }catch(e){
-                console.log(e);
-              }
-            }
         }];
 
         var notification = box.appendNotification(message, kNotificationName, null, box.PRIORITY_INFO_HIGH, buttons);
