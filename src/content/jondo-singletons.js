@@ -666,6 +666,7 @@ var JonDoCommunicator = {
     
   pingTimerObject : null,
   lastPongTime : null,
+  pingFailCount : 0,
 
   // "new identity" button clicked
   sendSwitchCascadeCommand : (event)=>{
@@ -678,10 +679,17 @@ var JonDoCommunicator = {
     if((JonDoCommunicator.socketConnection && JonDoCommunicator.secureKey) || JonDoCommunicator.lastPongTime != null){
       if(JonDoCommunicator.lastPongTime){
         var currentTime = Date.now();
-        if((currentTime - JonDoCommunicator.lastPongTime) > 3 * 1000){
-          JonDoCommunicator.lastPongTime = null;
-          JonDoCommunicator.shutDownSocketConnection();
-          return;
+        if((currentTime - JonDoCommunicator.lastPongTime) >= 2 * 1000){
+          JonDoCommunicator.pingFailCount++;
+          // if heartbeat fails at least 3 times, drop the connection and show alert
+          if (JonDoCommunicator.pingFailCount >= 3){
+            JonDoCommunicator.pingFailCount = 0;
+            JonDoCommunicator.lastPongTime = null;
+            JonDoCommunicator.shutDownSocketConnection();
+            return;
+          }
+        } else {
+            JonDoCommunicator.pingFailCount = 0;
         }
       }  
       JonDoCommunicator.sendData(JonDoCommunicator.socketConnection, "ping", JonDoCommunicator.secureKey);
@@ -767,6 +775,8 @@ var JonDoCommunicator = {
   clearPingTimer : ()=> {
       JonDoCommunicator.clearInterval(JonDoCommunicator.pingTimerObject);
       JonDoCommunicator.pingTimerObject = null;
+      JonDoCommunicator.pingFailCount = 0;
+      JonDoCommunicator.lastPongTime = null;
   },
 
   // start socket connection and event handling
@@ -1027,8 +1037,11 @@ var JonDoCommunicator = {
     if(!JonDoCommunicator.startConnectionTimerObject)
         JonDoCommunicator.startConnectionTimerObject = JonDoCommunicator.setInterval(JonDoCommunicator.startConnection, 1000);
     // start ping timer if it is not started yet
-    if(!JonDoCommunicator.pingTimerObject)
+    if(!JonDoCommunicator.pingTimerObject){
         JonDoCommunicator.pingTimerObject = JonDoCommunicator.setInterval(JonDoCommunicator.sendPing, 1000);
+        JonDoCommunicator.pingFailCount = 0;
+        JonDoCommunicator.lastPongTime = null;
+    }
   },
 }
 
