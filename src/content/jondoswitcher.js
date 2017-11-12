@@ -95,7 +95,7 @@ function showSurveyInfo(){
     try{
         const kNotificationName = "jondofox-survey-notification";
         // get the notificationbox that persists all tabs
-        let box = window.top.document.getElementById("high-priority-global-notificationbox");
+        let box = window.gBrowser.getNotificationBox();
         // check if migrate notificationbox is already present
         if (box.getNotificationWithValue(kNotificationName))
             return;
