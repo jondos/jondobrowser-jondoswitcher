@@ -511,6 +511,7 @@ var JonDoNetworkIntercepter = {
    securityLevel : 4,
 
     init : function() {
+        JonDoNetworkIntercepter.setSecurityLevel();
         JonDoNetworkIntercepter.observerService = Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService);
         JonDoNetworkIntercepter.observerService.addObserver(JonDoNetworkIntercepter.observerRequestHandler, 'http-on-modify-request', false);
         JonDoNetworkIntercepter.observerService.addObserver(JonDoNetworkIntercepter.observerResponseHandler, 'http-on-examine-response', false);
