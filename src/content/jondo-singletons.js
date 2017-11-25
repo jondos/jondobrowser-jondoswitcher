@@ -666,6 +666,7 @@ var JonDoCommunicator = {
   secureKey : null,
     
   pingTimerObject : null,
+  lastPingTime : null,
   lastPongTime : null,
   pingFailCount : 0,
 
@@ -677,23 +678,31 @@ var JonDoCommunicator = {
 
   // heartbeat
   sendPing : ()=>{
+    var currentTime = Date.now();
     if((JonDoCommunicator.socketConnection && JonDoCommunicator.secureKey) || JonDoCommunicator.lastPongTime != null){
       if(JonDoCommunicator.lastPongTime){
-        var currentTime = Date.now();
         if((currentTime - JonDoCommunicator.lastPongTime) >= 2 * 1000){
-          JonDoCommunicator.pingFailCount++;
-          // if heartbeat fails at least 3 times, drop the connection and show alert
-          if (JonDoCommunicator.pingFailCount >= 3){
+          if(JonDoCommunicator.lastPingTime == null || (currentTime - JonDoCommunicator.lastPingTime) >= 2 * 1000){
+            JonDoCommunicator.lastPingTime = null;
             JonDoCommunicator.pingFailCount = 0;
             JonDoCommunicator.lastPongTime = null;
-            JonDoCommunicator.shutDownSocketConnection();
-            return;
+          } else {
+            JonDoCommunicator.pingFailCount++;
+            // if heartbeat fails at least 3 times, drop the connection and show alert
+            if (JonDoCommunicator.pingFailCount >= 3){
+              JonDoCommunicator.lastPingTime = null;
+              JonDoCommunicator.pingFailCount = 0;
+              JonDoCommunicator.lastPongTime = null;
+              JonDoCommunicator.shutDownSocketConnection();
+              return;
+            }
           }
         } else {
             JonDoCommunicator.pingFailCount = 0;
         }
-      }  
+      }
       JonDoCommunicator.sendData(JonDoCommunicator.socketConnection, "ping", JonDoCommunicator.secureKey);
+      JonDoCommunicator.lastPingTime = currentTime;
     }
   },
 
@@ -777,6 +786,7 @@ var JonDoCommunicator = {
       JonDoCommunicator.clearInterval(JonDoCommunicator.pingTimerObject);
       JonDoCommunicator.pingTimerObject = null;
       JonDoCommunicator.pingFailCount = 0;
+      JonDoCommunicator.lastPingTime = null;
       JonDoCommunicator.lastPongTime = null;
   },
 
@@ -1041,6 +1051,7 @@ var JonDoCommunicator = {
     if(!JonDoCommunicator.pingTimerObject){
         JonDoCommunicator.pingTimerObject = JonDoCommunicator.setInterval(JonDoCommunicator.sendPing, 1000);
         JonDoCommunicator.pingFailCount = 0;
+        JonDoCommunicator.lastPingTime = null;
         JonDoCommunicator.lastPongTime = null;
     }
   },
