@@ -105,6 +105,8 @@ var JonDoSwitcher = {
             }
         }catch(e){}
 
+        JonDoSwitcher.updateJonDoAddonsIfNecessary();
+
         //create extensionsDir.txt file that contains extensions directory path
         try{
             var mOS = xreService.OS; 
@@ -166,6 +168,64 @@ var JonDoSwitcher = {
                     }
                 }
             }catch(e){}
+        }
+    },
+
+    // Feature 1849 - Manual reinstall does not update addons on Mac
+    updateJonDoAddonsIfNecessary : () => {
+        if(JonDoSwitcher.xpiSrcDir != null && JonDoSwitcher.xpiSrcDir.exists() && 
+           JonDoSwitcher.xpiDestDir != null && JonDoSwitcher.xpiDestDir.exists()){
+            let fileJonDoButtonSrc = JonDoSwitcher.xpiSrcDir.clone(); 
+            fileJonDoButtonSrc.appendRelativePath("info@jondos.de.xpi");
+            let fileJonDoButtonDest = JonDoSwitcher.xpiDestDir.clone();
+            fileJonDoButtonDest.appendRelativePath("info@jondos.de.xpi");
+
+            let fileJonDoLauncherSrc = JonDoSwitcher.xpiSrcDir.clone();
+            fileJonDoLauncherSrc.appendRelativePath("jondo-launcher@jondos.de.xpi");
+            let fileJonDoLauncherDest = JonDoSwitcher.xpiDestDir.clone(); 
+            fileJonDoLauncherDest.appendRelativePath("jondo-launcher@jondos.de.xpi");
+
+            let fileTorButtonSrc = JonDoSwitcher.xpiSrcDir.clone(); 
+            fileTorButtonSrc.appendRelativePath("torbutton@torproject.org.xpi");
+            let fileTorButtonDest = JonDoSwitcher.xpiDestDir.clone();
+            fileTorButtonDest.appendRelativePath("torbutton@torproject.org.xpi");
+
+            let fileTorLauncherSrc = JonDoSwitcher.xpiSrcDir.clone();
+            fileTorLauncherSrc.appendRelativePath("tor-launcher@torproject.org.xpi");
+            let fileTorLauncherDest = JonDoSwitcher.xpiDestDir.clone(); 
+            fileTorLauncherDest.appendRelativePath("tor-launcher@torproject.org.xpi");
+
+            var addonUpdated = false;
+            try{
+                if(fileJonDoButtonSrc.exists() && fileJonDoButtonDest.exists()){
+                    if(fileJonDoButtonSrc.fileSize != fileJonDoButtonDest.fileSize){
+                        fileJonDoButtonSrc.copyTo(JonDoSwitcher.xpiDestDir, "");
+                        addonUpdated = true;
+                    }
+                }
+                if(fileJonDoLauncherSrc.exists() && fileJonDoLauncherDest.exists()){
+                    if(fileJonDoLauncherSrc.fileSize != fileJonDoLauncherDest.fileSize){
+                        fileJonDoLauncherSrc.copyTo(JonDoSwitcher.xpiDestDir, "");
+                        addonUpdated = true;
+                    }
+                }
+                if(fileTorButtonSrc.exists() && fileTorButtonDest.exists()){
+                    if(fileTorButtonSrc.fileSize != fileTorButtonDest.fileSize){
+                        fileTorButtonSrc.copyTo(JonDoSwitcher.xpiDestDir, "");
+                        addonUpdated = true;
+                    }
+                }
+                if(fileTorLauncherSrc.exists() && fileTorLauncherDest.exists()){
+                    if(fileTorLauncherSrc.fileSize != fileTorLauncherDest.fileSize){
+                        fileTorLauncherSrc.copyTo(JonDoSwitcher.xpiDestDir, "");
+                        addonUpdated = true;
+                    }
+                }
+            }catch(e){
+            }
+            if(addonUpdated){
+                JonDoSwitcher.restart();
+            }
         }
     },
 
@@ -658,7 +718,7 @@ var JonDoCommunicator = {
       },
   startConnectionTimerObject : null,
   startConnectionFailedCount : 0,
-  startConnectionMaxFailCount : 10,
+  startConnectionMaxFailCount : 15,
   connectionTimeout : 5,
 
   socketConnection : null,
@@ -779,6 +839,7 @@ var JonDoCommunicator = {
   clearConnectionTimer : ()=> {
       JonDoCommunicator.clearInterval(JonDoCommunicator.startConnectionTimerObject);
       JonDoCommunicator.startConnectionTimerObject = null;
+      JonDoCommunicator.startConnectionFailedCount = 0;
   },
 
   // stop heartbeat
