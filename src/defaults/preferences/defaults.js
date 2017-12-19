@@ -63,6 +63,6 @@ pref("extensions.jondoswitcher.direct.ssl", "");
 pref("extensions.jondoswitcher.direct.ssl_port", 0);
 pref("extensions.jondoswitcher.direct.type", 0);
 // survey info
-pref("extensions.jondoswitcher.show_survey_info", true);
+//pref("extensions.jondoswitcher.show_survey_info", true);
 // restart jondo
 pref("extensions.JonDo.automatic_shutdown", true);
