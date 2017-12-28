@@ -705,7 +705,7 @@ var BrowserShutdownIntercepter = {
 
       Handshake: Client sends "get-token", server sends "token" with a long randomized alphabetical key.
       Heartbeat: Client sends "ping" every second, Server should reply with "pong" asap.
-                 If server does not reply within 3 seconds, client thinks the connection is dead.
+                 If server does not reply within 3 seconds after the last ping, client thinks the connection is dead.
       Request: Client can send "switch-cascade" to change to "New Identity".
       Push: Server can push "open-new-tab" to tell the client to open a new tab with given url.
  */
@@ -729,6 +729,7 @@ var JonDoCommunicator = {
   lastPingTime : null,
   lastPongTime : null,
   pingFailCount : 0,
+  pingCount : 0,
 
   // "new identity" button clicked
   sendSwitchCascadeCommand : (event)=>{
@@ -744,9 +745,9 @@ var JonDoCommunicator = {
         if((currentTime - JonDoCommunicator.lastPongTime) >= 2 * 1000){
           if(JonDoCommunicator.lastPingTime == null || (currentTime - JonDoCommunicator.lastPingTime) >= 2 * 1000){
             JonDoCommunicator.lastPingTime = null;
-            JonDoCommunicator.pingFailCount = 0;
             JonDoCommunicator.lastPongTime = null;
           } else {
+            JonDoCommunicator.pingCount = 0;
             JonDoCommunicator.pingFailCount++;
             // if heartbeat fails at least 3 times, drop the connection and show alert
             if (JonDoCommunicator.pingFailCount >= 3){
@@ -761,8 +762,14 @@ var JonDoCommunicator = {
             JonDoCommunicator.pingFailCount = 0;
         }
       }
-      JonDoCommunicator.sendData(JonDoCommunicator.socketConnection, "ping", JonDoCommunicator.secureKey);
-      JonDoCommunicator.lastPingTime = currentTime;
+      JonDoCommunicator.pingCount++;
+      if (JonDoCommunicator.pingCount == 60){      
+        JonDoCommunicator.sendData(JonDoCommunicator.socketConnection, "save-config", JonDoCommunicator.secureKey);
+        JonDoCommunicator.pingCount = 0;
+      } else {
+        JonDoCommunicator.sendData(JonDoCommunicator.socketConnection, "ping", JonDoCommunicator.secureKey);
+        JonDoCommunicator.lastPingTime = currentTime;
+      }
     }
   },
 
@@ -847,6 +854,7 @@ var JonDoCommunicator = {
       JonDoCommunicator.clearInterval(JonDoCommunicator.pingTimerObject);
       JonDoCommunicator.pingTimerObject = null;
       JonDoCommunicator.pingFailCount = 0;
+      JonDoCommunicator.pingCount = 0;
       JonDoCommunicator.lastPingTime = null;
       JonDoCommunicator.lastPongTime = null;
   },
@@ -1112,6 +1120,7 @@ var JonDoCommunicator = {
     if(!JonDoCommunicator.pingTimerObject){
         JonDoCommunicator.pingTimerObject = JonDoCommunicator.setInterval(JonDoCommunicator.sendPing, 1000);
         JonDoCommunicator.pingFailCount = 0;
+        JonDoCommunicator.pingCount = 0;
         JonDoCommunicator.lastPingTime = null;
         JonDoCommunicator.lastPongTime = null;
     }
