@@ -15,6 +15,7 @@
                     <menuitem id = "disableAllProxies" label="&network.direct;" onclick="disableAllProxies();"/>
                 </menupopup>
             </toolbarbutton>
+	<image id="alert_arrow" src='chrome://jondoswitcher/content/onionArrow-short.png' crop="end" style="padding:4px; margin:4px; height: 40; width:40" hidden="true"/>
         </toolbar>
     </toolbox>
 </overlay>

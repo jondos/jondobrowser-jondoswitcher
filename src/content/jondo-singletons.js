@@ -93,14 +93,32 @@ var JonDoSwitcher = {
                 let prefsBranch = prefsService.getBranch("extensions.jondoswitcher.");
                 if(prefsBranch){
                     if(prefsBranch.getIntPref("is_first_launch") == 1){
-                        prefsBranch.setIntPref("is_first_launch", 0);
+                    	prefsBranch.setIntPref("is_first_launch", 0);
                         if(!JonDoSwitcher.jondoEnabled && !JonDoSwitcher.torEnabled){
-                            JonDoSwitcher.shouldBackupDirectProxyPrefs = false;
-                            JonDoSwitcher.switchAddons(true, false);
-                            JonDoSwitcher.restart();
-                            return;
+				JonDoSwitcher.shouldBackupDirectProxyPrefs = false;
+			     	if(prefsBranch.getIntPref("switched_once") == 0){
+					JonDoSwitcher.setCurrentNetwork("direct");
+					JonDoSwitcher.switchAddons(false, false);
+					JonDoSwitcher.curNetwork = 2;
+					JonDoSwitcher.changeHomePage("about:noproxy");
+			     	}
+			     	else {
+					JonDoSwitcher.switchAddons(true, false);
+			     	}
+			     	JonDoSwitcher.restart();
+                             	return;
                         }
                     }
+		    else {
+				if(prefsBranch.getIntPref("switched_once") == 0) {
+		                        JonDoSwitcher.shouldBackupDirectProxyPrefs = true;
+					JonDoSwitcher.setCurrentNetwork("direct");
+					JonDoSwitcher.switchAddons(false, false);
+					JonDoSwitcher.curNetwork = 2;
+					JonDoSwitcher.changeHomePage("about:noproxy");
+			 	}
+
+		        }
                 }
             }
         }catch(e){}
@@ -305,6 +323,10 @@ var JonDoSwitcher = {
                     if(fileJonDoButton.exists()){
                         fileJonDoButton.copyTo(JonDoSwitcher.xpiDestDir, "");
                     }
+                }catch(e){
+                }
+
+ try{
                     if(fileJonDoLauncher.exists()){
                         fileJonDoLauncher.copyTo(JonDoSwitcher.xpiDestDir, "");
                     }
@@ -390,6 +412,12 @@ var JonDoSwitcher = {
         JonDoSwitcher.switchAddons(true, false);
         JonDoSwitcher.curNetwork = 1;
         JonDoSwitcher.changeHomePage("about:tor");
+	let prefsBranch = prefsService.getBranch("extensions.jondoswitcher.");
+        if(prefsBranch){
+        	if(prefsBranch.getIntPref("switched_once") == 0){
+                        prefsBranch.setIntPref("switched_once", 1);
+		}
+	}
         JonDoSwitcher.restart();
     },
 
@@ -407,6 +435,12 @@ var JonDoSwitcher = {
         JonDoSwitcher.switchAddons(false, true);
         JonDoSwitcher.curNetwork = 2;
         JonDoSwitcher.changeHomePage("about:tor");
+	let prefsBranch = prefsService.getBranch("extensions.jondoswitcher.");
+        if(prefsBranch){
+        	if(prefsBranch.getIntPref("switched_once") == 0){
+                        prefsBranch.setIntPref("switched_once", 1);
+		}
+	}
         JonDoSwitcher.restart();
     },
 
@@ -653,6 +687,8 @@ var JonDoNetworkIntercepter = {
                         if(contentLength > 100){
                             if(!JonDoSwitcher.dontAskTorToggling && !JonDoSwitcher.updateDialogShown){
                                 JonDoSwitcher.updateDialogShown = true;
+
+				/*This code is commented out as a fix for Bug #1982
                                 var params = {inn:null, out:""};
                                 var window = windowMediator.getMostRecentWindow("navigator:browser");
                                 window.openDialog("chrome://jondoswitcher/content/jondo-update-dialog.xul", "",
@@ -665,6 +701,7 @@ var JonDoNetworkIntercepter = {
                                 }else if(params.out == "cancel"){
                                     JonDoSwitcher.dontAskTorToggling = true;
                                 }
+				*/
                             }
                         }
                     }

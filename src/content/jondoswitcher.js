@@ -53,6 +53,13 @@ function checkProxy(){
         // show survey info if not done already
         showSurveyInfo();
     }
+	let prefsBranch = prefsService.getBranch("extensions.jondoswitcher.");
+        if(prefsBranch){
+		if(prefsBranch.getIntPref("switched_once") == 0){
+			window.top.document.getElementById("alert_arrow").hidden = false;
+		}
+		
+	}
 }
 
 
